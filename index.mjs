@@ -14,7 +14,7 @@ import cors from "cors";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const port = process.env.PORT || 8080;
+const port = Number(process.env.PORT) || 8989;
 
 // Equivalent to mongoose connection
 // Pool is nothing but group of connections
