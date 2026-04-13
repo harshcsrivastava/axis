@@ -11,6 +11,7 @@ import pg from "pg";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -20,7 +21,7 @@ const port = Number(process.env.PORT) || 8989;
 // Pool is nothing but group of connections
 // If you pick one connection out of the pool and release it
 // the pooler will keep that connection open for sometime to other clients to reuse
-const pool = new pg.Pool({
+export const pool = new pg.Pool({
   host: "localhost",
   port: 5433,
   user: "postgres",
@@ -33,6 +34,9 @@ const pool = new pg.Pool({
 
 const app = new express();
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
