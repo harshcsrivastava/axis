@@ -1,4 +1,5 @@
 import { Router } from "express"
+import "dotenv/config";
 import ApiResponse from "./utils/api-response.js";
 
 const router = Router()

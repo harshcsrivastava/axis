@@ -1,0 +1,16 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5433,
+            "driver": "PostgreSQL",
+            "name": "postgress",
+            "group": "postgres",
+            "database": "sql_class_2_db",
+            "username": "postgres",
+            "password": "postgres"
+        }
+    ]
+}

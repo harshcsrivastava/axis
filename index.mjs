@@ -86,6 +86,6 @@ app.put("/:id/:name", async (req, res) => {
 
 import appRoute from "./src/app.js"
 
-app.use("/api/auth", appRoute)
+app.use("/api", appRoute)
 
 app.listen(port, () => console.log("Server starting on port: " + port));
