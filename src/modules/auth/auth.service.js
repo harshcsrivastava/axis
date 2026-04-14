@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import {
     generateAccessToken,
     generateRefreshToken,
+    verifyRefreshToken,
 } from "../../utils/jwt-utils.js";
 
 const hashFunction = async (payload) => {
@@ -65,4 +66,38 @@ const handleLogin = async ({ email, password }) => {
     };
 };
 
-export { handleRegister, handleLogin };
+const refresh = async (token) => {
+    if (!token) throw ApiError.unauthorized("Refresh token missing");
+
+    let decoded;
+    try {
+        decoded = verifyRefreshToken(token);
+    } catch (error) {
+        throw ApiError.unauthorized("Invalid or expired refresh token");
+    }
+
+    const existingUser = await pool.query("SELECT * FROM users where id = $1", [
+        decoded.id,
+    ]);
+
+    if (existingUser.rowCount === 0)
+        throw ApiError.unauthorized("User not found");
+
+    const user = existingUser.rows[0];
+
+    const isRefreshTokenValid = await bcrypt.compare(token, user.refresh_token);
+    if (!isRefreshTokenValid) {
+        throw ApiError.unauthorized("Invalid refresh token");
+    }
+
+    const accessToken = generateAccessToken({ id: user.id, email: user.email });
+
+    return { accessToken };
+};
+
+const logout = async (userId) => {
+    const sql = "UPDATE users set refresh_token = NULL where id = $1";
+    await pool.query(sql, [userId]);
+};
+
+export { handleRegister, handleLogin, logout, refresh };
