@@ -20,6 +20,15 @@
     <div
       class="max-w-7xl w-full bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-slate-700/50"
     >
+      <div class="flex justify-end mb-6">
+        <button
+          id="logout-btn"
+          class="px-4 py-2 rounded-xl bg-rose-500/90 hover:bg-rose-500 text-white font-semibold transition"
+        >
+          Logout
+        </button>
+      </div>
+
       <div class="text-center mb-10">
         <h1
           class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 tracking-tight"
@@ -68,9 +77,58 @@
     </div>
 
     <script>
+      function requireAuth() {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          window.location.href = "/login.html";
+          return null;
+        }
+        return token;
+      }
+
+      async function fetchWithAuth(url, options = {}) {
+        const token = requireAuth();
+        if (!token) return null;
+
+        const headers = {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${token}`,
+        };
+
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("email");
+          window.location.href = "/login.html";
+          return null;
+        }
+
+        return response;
+      }
+
+      async function handleLogout() {
+        try {
+          await fetchWithAuth("/api/auth/logout", { method: "POST" });
+        } finally {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("email");
+          window.location.href = "/login.html";
+        }
+      }
+
+      requireAuth();
+      document
+        .getElementById("logout-btn")
+        .addEventListener("click", handleLogout);
+
       async function run() {
         const tbl = document.getElementById("tbl");
-        const res = await fetch("/seats");
+        const res = await fetchWithAuth("/seats");
+        if (!res) return;
         const resarray = await res.json();
         const j = resarray.sort((a, b) => a.id - b.id);
         let tr;
@@ -109,7 +167,10 @@
               const name = prompt("Enter your name");
               if (!name) return;
 
-              const res = await fetch(`/${id}/${name}`, { method: "PUT" });
+              const res = await fetchWithAuth(`/${id}/${name}`, {
+                method: "PUT",
+              });
+              if (!res) return;
               const data = await res.json();
 
               if (data.error) {

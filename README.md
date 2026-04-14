@@ -1,149 +1,173 @@
-# Booking System (Express + PostgreSQL)
+# Axis - ChaiCode Cinema Booking System
 
-Simple seat-booking API using Express and PostgreSQL.
+Seat booking application built with Express, PostgreSQL, and simple frontend pages.
 
-## Prerequisites
+## Stack
 
-- Node.js 18+ and npm
-- Docker Desktop (or Docker Engine with Compose)
-- `curl` (optional, for API checks)
+- Node.js + Express
+- PostgreSQL via pg
+- Auth with JWT access token + refresh token cookie
+- Frontend pages in plain HTML with Tailwind CDN
 
-## Project Files
+## Local Development
 
-- `index.mjs`: Express server + PostgreSQL queries
-- `init.sql`: creates and seeds the `seats` table
-- `docker-compose.yml`: Postgres + app containers
+### Prerequisites
 
-## Important Connection Note
+- Node.js 18+
+- npm
+- Docker Desktop (or Docker Engine + Compose)
 
-Current app code uses this DB connection:
-
-- host: `localhost`
-- port: `5433`
-- user: `postgres`
-- password: `postgres`
-- database: `sql_class_2_db`
-
-Because of that, the safest setup is:
-
-- Run **Postgres in Docker**
-- Run **Node app locally**
-
-## Setup (Recommended)
-
-### 1. Install dependencies
+### Install
 
 ```bash
 npm install
 ```
 
-### 2. Start only database container
+### Start database
 
 ```bash
-docker compose up -d db
+npm run db:up
 ```
 
-### 3. Verify DB is healthy
-
-```bash
-docker compose ps
-```
-
-You should see `booking-db` as `healthy`.
-
-### 4. Run the app locally
+### Start app
 
 ```bash
 npm start
 ```
 
-Server starts on: `http://localhost:8989`
+App runs on:
 
-## Database Initialization
+- http://localhost:8989
 
-`init.sql` is auto-run by Postgres only on first DB initialization (when the volume is empty).
+## NPM Scripts
 
-It does:
+- npm start: start server with node index.mjs
+- npm run dev: start with nodemon
+- npm run db:up: start postgres container
+- npm run db:down: stop and remove volumes
 
-- create table `seats`
-- insert 20 default seats if table is empty
+## Database Notes
 
-If you already have DB volume data, `init.sql` will not run again automatically.
+The app now supports both:
 
-## API Endpoints
+- DATABASE_URL (recommended for Supabase/production)
+- PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE (local fallback)
 
-### Health/Home
+Local setup still works with Docker on localhost:5433.
 
-```http
-GET /
+init.sql is run only on first initialization of the Postgres volume.
+
+## Supabase Hosting Setup (Step by Step)
+
+### 1. Create a Supabase project
+
+1. Go to Supabase dashboard.
+2. Create a new project.
+3. Wait until the database is provisioned.
+
+### 2. Get your database connection string
+
+1. Open Supabase: Project Settings -> Database.
+2. Copy the Postgres connection string.
+3. Use it as DATABASE_URL.
+
+### 3. Run SQL schema once on Supabase
+
+1. Open SQL Editor in Supabase.
+2. Paste contents of init.sql.
+3. Run the query.
+
+### 4. Configure environment variables
+
+Create a .env file locally from .env.example and set:
+
+- DATABASE_URL
+- JWT_ACCESS_TOKEN_SECRET
+- JWT_REFRESH_TOKEN_SECRET
+- JWT_ACCESS_TOKEN_EXPIRES_IN
+- JWT_REFRESH_TOKEN_EXPIRES_IN
+- NODE_ENV (production on hosted environment)
+
+### 5. Deploy your Node app
+
+You can deploy the app server on Render/Railway/Fly and point it to Supabase DB.
+
+### 6. Add same env vars in your hosting provider
+
+Set the exact same env vars in deployment dashboard before first run.
+
+## Routes Overview
+
+### Page and Seat Routes
+
+- GET /
+- GET /seats
+- PUT /:id/:name
+
+### Auth API Routes
+
+Base prefix: /api/auth
+
+- POST /register
+- POST /login
+- POST /refresh-token
+- POST /logout
+- GET /health
+
+### Other API Base
+
+- /api mounts src/app.js routes
+
+## Auth Flow
+
+1. Login with email and password at POST /api/auth/login.
+2. Response includes accessToken, and server sets refreshToken cookie.
+3. Store accessToken on frontend and send it as Authorization header for protected calls.
+4. Refresh access token using POST /api/auth/refresh-token (reads refreshToken from cookie).
+5. Logout using POST /api/auth/logout.
+
+## Postman Quick Test
+
+### Login
+
+POST http://localhost:8989/api/auth/login
+
+Body JSON:
+
+```json
+{
+	"email": "you@example.com",
+	"password": "yourPassword"
+}
 ```
 
-Returns the HTML page.
+### Refresh token
 
-### Get all seats
+POST http://localhost:8989/api/auth/refresh-token
 
-```http
-GET /seats
-```
+- No body required
+- Requires refreshToken cookie from login response
 
-### Book a seat
+### Logout
 
-```http
-PUT /:id/:name
-```
+POST http://localhost:8989/api/auth/logout
 
-Example:
+- Requires Authorization: Bearer <accessToken>
 
-```bash
-curl -X PUT http://localhost:8989/5/Harsh
-```
 
-## Quick Checks
+## Useful Commands
 
-### Check rows directly in DB
+Check DB rows:
 
 ```bash
 docker compose exec -T db psql -U postgres -d sql_class_2_db -c "select count(*) from seats;"
 ```
 
-### Check API response
-
-```bash
-curl http://localhost:8989/seats
-```
-
-## Troubleshooting
-
-### "DB has no entries"
-
-1. Check DB rows with `psql` command above.
-2. If rows exist but API fails, ensure app is running locally (`npm start`) and not as Docker `app` service.
-3. If you need a clean DB re-seed:
+Re-seed DB (delete volume):
 
 ```bash
 docker compose down -v
 docker compose up -d db
-```
-
-### Port already in use
-
-- DB host port: `5433`
-- App port: `8989`
-
-Stop conflicting services, then restart.
-
-## Useful Docker Commands
-
-Stop everything:
-
-```bash
-docker compose down
-```
-
-Stop and delete DB data volume:
-
-```bash
-docker compose down -v
 ```
 
 View logs:

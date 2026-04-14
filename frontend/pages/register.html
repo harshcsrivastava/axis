@@ -146,7 +146,11 @@
                 }
 
                 const text = await response.text();
-                return text || fallbackMessage;
+                if (!text) return fallbackMessage;
+                if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+                    return fallbackMessage;
+                }
+                return text;
             }
 
             document

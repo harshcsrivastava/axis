@@ -44,7 +44,7 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 //get all seats
-app.get("/seats", async (req, res) => {
+app.get("/seats", authenticate, async (req, res) => {
   const result = await pool.query("select * from seats"); // equivalent to Seats.find() in mongoose
   res.send(result.rows);
 });
@@ -91,7 +91,22 @@ app.put("/:id/:name", async (req, res) => {
 
 
 import appRoute from "./src/app.js"
+import { authenticate } from "./src/modules/auth/auth.middleware.js";
 
 app.use("/api", appRoute)
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  return res.status(statusCode).json({
+    success: false,
+    message,
+  });
+});
 
 app.listen(port, () => console.log("Server starting on port: " + port));
