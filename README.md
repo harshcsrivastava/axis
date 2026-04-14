@@ -57,45 +57,6 @@ Local setup still works with Docker on localhost:5433.
 
 init.sql is run only on first initialization of the Postgres volume.
 
-## Supabase Hosting Setup (Step by Step)
-
-### 1. Create a Supabase project
-
-1. Go to Supabase dashboard.
-2. Create a new project.
-3. Wait until the database is provisioned.
-
-### 2. Get your database connection string
-
-1. Open Supabase: Project Settings -> Database.
-2. Copy the Postgres connection string.
-3. Use it as DATABASE_URL.
-
-### 3. Run SQL schema once on Supabase
-
-1. Open SQL Editor in Supabase.
-2. Paste contents of init.sql.
-3. Run the query.
-
-### 4. Configure environment variables
-
-Create a .env file locally from .env.example and set:
-
-- DATABASE_URL
-- JWT_ACCESS_TOKEN_SECRET
-- JWT_REFRESH_TOKEN_SECRET
-- JWT_ACCESS_TOKEN_EXPIRES_IN
-- JWT_REFRESH_TOKEN_EXPIRES_IN
-- NODE_ENV (production on hosted environment)
-
-### 5. Deploy your Node app
-
-You can deploy the app server on Render/Railway/Fly and point it to Supabase DB.
-
-### 6. Add same env vars in your hosting provider
-
-Set the exact same env vars in deployment dashboard before first run.
-
 ## Routes Overview
 
 ### Page and Seat Routes
