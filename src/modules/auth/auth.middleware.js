@@ -8,8 +8,8 @@ const authenticate = async (req, res, next) => {
         token = req.headers.authorization.split(" ")[1];
     }
 
-    if (!token){
-        return res.redirect("/api/auth/login")
+    if (!token) {
+        res.redirect("/login.html");
     }
 
     const decoded = verifyAccessToken(token); // id & email from accessToken

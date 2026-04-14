@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login - ChaiCode Cinema</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="preconnect"
+            href="https://fonts.googleapis.com"
+        />
+        <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossorigin
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Sora:wght@400;600;700&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body
+        class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8"
+        style="font-family: Sora, sans-serif"
+    >
+        <div class="pointer-events-none absolute -left-20 bottom-[-130px] h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl"></div>
+        <div class="pointer-events-none absolute -right-24 -top-16 h-80 w-80 rounded-full bg-sky-400/20 blur-3xl"></div>
+
+        <main
+            class="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-sky-200/20 bg-slate-900/70 shadow-2xl backdrop-blur md:grid-cols-[1.2fr_1fr]"
+        >
+            <section
+                class="border-b border-sky-200/20 bg-gradient-to-br from-emerald-400/15 via-slate-900/30 to-sky-400/15 p-7 sm:p-10 md:border-b-0 md:border-r"
+            >
+                <span
+                    class="inline-flex rounded-full border border-sky-300/40 bg-slate-900/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.15em] text-sky-200"
+                >
+                    AXIS - ChaiCode Cinema
+                </span>
+                <h1
+                    class="mt-7 text-3xl font-bold leading-tight tracking-tight text-slate-100 sm:text-4xl"
+                    style="font-family: Space Grotesk, sans-serif"
+                >
+                    Welcome back to
+                    <span class="text-cyan-300">Seat Control</span>
+                </h1>
+                <p class="mt-4 max-w-md text-sm leading-7 text-slate-300 sm:text-base">
+                    Sign in to manage your bookings, lock your favorite seats, and skip
+                    the checkout rush.
+                </p>
+            </section>
+
+            <section class="p-7 sm:p-10">
+                <h2
+                    class="text-3xl font-bold tracking-tight"
+                    style="font-family: Space Grotesk, sans-serif"
+                >
+                    Login
+                </h2>
+                <p class="mt-2 text-sm text-slate-400">Use your registered credentials.</p>
+
+                <div
+                    id="error-message"
+                    class="mt-5 hidden rounded-xl border border-rose-300/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-100"
+                ></div>
+
+                <form id="login-form" class="mt-6 space-y-4">
+                    <div>
+                        <label for="email" class="mb-2 block text-sm font-semibold text-slate-300"
+                            >Email</label
+                        >
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                            class="w-full rounded-xl border border-slate-600 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/20"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            for="password"
+                            class="mb-2 block text-sm font-semibold text-slate-300"
+                            >Password</label
+                        >
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter password"
+                            autocomplete="current-password"
+                            required
+                            class="w-full rounded-xl border border-slate-600 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/20"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-3 font-bold text-slate-950 transition hover:brightness-105 active:scale-[0.99]"
+                        style="font-family: Space Grotesk, sans-serif"
+                    >
+                        Log In
+                    </button>
+                </form>
+
+                <p class="mt-6 text-center text-sm text-slate-400">
+                    Don't have an account?
+                    <a href="./register.html" class="font-semibold text-cyan-300 hover:text-cyan-200"
+                        >Register here</a
+                    >
+                </p>
+            </section>
+        </main>
+
+        <script>
+            async function readErrorMessage(response, fallbackMessage) {
+                const contentType = response.headers.get("content-type") || "";
+
+                if (contentType.includes("application/json")) {
+                    const payload = await response.json();
+                    return (
+                        payload.message ||
+                        payload.error ||
+                        payload?.data?.message ||
+                        fallbackMessage
+                    );
+                }
+
+                const text = await response.text();
+                return text || fallbackMessage;
+            }
+
+            document
+                .getElementById("login-form")
+                .addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById("email").value;
+                    const password = document.getElementById("password").value;
+                    const errorDiv = document.getElementById("error-message");
+                    errorDiv.classList.add("hidden");
+
+                    try {
+                        const response = await fetch("/api/auth/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email, password }),
+                        });
+
+                        if (!response.ok) {
+                            errorDiv.textContent = await readErrorMessage(
+                                response,
+                                "Failed to log in",
+                            );
+                            errorDiv.classList.remove("hidden");
+                            return;
+                        }
+
+                        const data = await response.json();
+
+                        localStorage.setItem("accessToken", data.data.accessToken);
+                        localStorage.setItem("email", data.data.user.email);
+
+                        window.location.href = "/";
+                    } catch (err) {
+                        errorDiv.textContent = "Network error occurred.";
+                        errorDiv.classList.remove("hidden");
+                    }
+                });
+        </script>
+    </body>
+</html>

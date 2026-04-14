@@ -8,7 +8,7 @@
 
 import express from "express";
 import pg from "pg";
-import { dirname } from "path";
+import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -37,6 +37,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname, "frontend/pages")));
+
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
