@@ -1,137 +1,178 @@
 # Axis - ChaiCode Cinema Booking System
 
-Seat booking application built with Express, PostgreSQL, and simple frontend pages.
+Seat booking app built with Express, PostgreSQL, JWT auth, and plain HTML pages.
 
-## Stack
+## Tech Stack
 
 - Node.js + Express
-- PostgreSQL via pg
-- Auth with JWT access token + refresh token cookie
-- Frontend pages in plain HTML with Tailwind CDN
+- PostgreSQL (pg)
+- JWT access token + refresh token cookie
+- Frontend pages in HTML + Tailwind CDN
+- Nodemailer for email verification
 
-## Local Development
+## Project Structure
 
-### Prerequisites
+- `index.mjs`: server entry, DB pool, seat booking routes, static page serving
+- `src/app.js`: API router mounted at `/api`
+- `src/modules/auth/*`: auth routes, controller, service, middleware, DTO validation
+- `frontend/pages/*`: login/register pages
+- `init.sql`: creates tables and seeds seats
+
+## Prerequisites
 
 - Node.js 18+
 - npm
 - Docker Desktop (or Docker Engine + Compose)
 
-### Install
+## Installation
 
 ```bash
 npm install
 ```
 
-### Start database
+## Required Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# JWT
+JWT_ACCESS_TOKEN_SECRET=replace_with_strong_secret
+JWT_REFRESH_TOKEN_SECRET=replace_with_strong_secret
+JWT_ACCESS_TOKEN_EXPIRES_IN=15m
+JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+
+# Email (Mailtrap or SMTP provider)
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_pass
+SMTP_FROM_NAME=Axis ChaiCode Cinema
+SMTP_FROM_EMAIL=no-reply@example.com
+
+# URL used in verification email links
+CLIENT_URL=http://localhost:8989
+```
+
+Notes:
+
+- The PostgreSQL connection in `index.mjs` is currently hardcoded to local Docker defaults:
+  - host: `localhost`
+  - port: `5433`
+  - user: `postgres`
+  - password: `postgres`
+  - database: `sql_class_2_db`
+- `DATABASE_URL` is not currently used by the app.
+
+## Run Locally
+
+### 1) Start PostgreSQL
 
 ```bash
 npm run db:up
 ```
 
-### Start app
+### 2) Start app
 
 ```bash
 npm start
 ```
 
-App runs on:
+Server runs at:
 
 - http://localhost:8989
 
 ## NPM Scripts
 
-- npm start: start server with node index.mjs
-- npm run dev: start with nodemon
-- npm run db:up: start postgres container
-- npm run db:down: stop and remove volumes
-
-## Database Notes
-
-The app now supports both:
-
-- DATABASE_URL (recommended for Supabase/production)
-- PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE (local fallback)
-
-Local setup still works with Docker on localhost:5433.
-
-init.sql is run only on first initialization of the Postgres volume.
+- `npm start`: start server with `node index.mjs`
+- `npm run dev`: start with `nodemon index.mjs`
+- `npm run db:up`: start postgres container
+- `npm run db:down`: stop container and remove volume
 
 ## Routes Overview
 
-### Page and Seat Routes
+### UI and Seat Routes
 
-- GET /
-- GET /seats
-- PUT /:id/:name
+- `GET /`: main page (`index.html`)
+- `GET /login.html`: login page
+- `GET /register.html`: register page
+- `GET /seats`: protected, requires `Authorization: Bearer <accessToken>`
+- `PUT /:id/:name`: book a seat
 
-### Auth API Routes
+### API Routes
 
-Base prefix: /api/auth
+Base prefix: `/api`
 
-- POST /register
-- POST /login
-- POST /refresh-token
-- POST /logout
-- GET /health
+- `GET /health`
 
-### Other API Base
+Auth base prefix: `/api/auth`
 
-- /api mounts src/app.js routes
+- `POST /register`
+- `POST /login`
+- `POST /refresh-token`
+- `POST /logout` (protected)
+- `GET /verify-email/:token`
+- `GET /health` (protected)
 
 ## Auth Flow
 
-1. Login with email and password at POST /api/auth/login.
-2. Response includes accessToken, and server sets refreshToken cookie.
-3. Store accessToken on frontend and send it as Authorization header for protected calls.
-4. Refresh access token using POST /api/auth/refresh-token (reads refreshToken from cookie).
-5. Logout using POST /api/auth/logout.
+1. Register via `POST /api/auth/register`.
+2. Verify email using the link sent by email (`/api/auth/verify-email/:token`).
+3. Login via `POST /api/auth/login`.
+4. Response includes `accessToken` and sets `refreshToken` cookie.
+5. Use `Authorization: Bearer <accessToken>` for protected routes.
+6. Refresh access token with `POST /api/auth/refresh-token`.
+7. Logout with `POST /api/auth/logout`.
 
-## Postman Quick Test
+## Quick API Test
 
 ### Login
 
+```http
 POST http://localhost:8989/api/auth/login
+Content-Type: application/json
 
-Body JSON:
-
-```json
 {
-	"email": "you@example.com",
-	"password": "yourPassword"
+  "email": "you@example.com",
+  "password": "yourPassword"
 }
 ```
 
-### Refresh token
+### Refresh Token
 
+```http
 POST http://localhost:8989/api/auth/refresh-token
+```
 
-- No body required
-- Requires refreshToken cookie from login response
+Requires `refreshToken` cookie from login response.
 
 ### Logout
 
+```http
 POST http://localhost:8989/api/auth/logout
+Authorization: Bearer <accessToken>
+```
 
-- Requires Authorization: Bearer <accessToken>
+## Database Notes
 
+- `init.sql` creates `seats` and `users` tables.
+- `init.sql` seeds 40 seats only if not already present.
+- SQL in `insert.sql` is for manual experimentation only.
 
 ## Useful Commands
 
-Check DB rows:
+Check seat count:
 
 ```bash
 docker compose exec -T db psql -U postgres -d sql_class_2_db -c "select count(*) from seats;"
 ```
 
-Re-seed DB (delete volume):
+Reset DB and re-run init script:
 
 ```bash
 docker compose down -v
 docker compose up -d db
 ```
 
-View logs:
+View container logs:
 
 ```bash
 docker compose logs --tail=120 db
